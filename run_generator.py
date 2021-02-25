@@ -279,7 +279,6 @@ def style_mixing_example(G, args):
 
 def generate_images(G, args):
     latent_size, label_size = G.latent_size, G.label_size
-    print(f"Latent size: {latent_size}")
     device = torch.device(args.gpu[0] if args.gpu else 'cpu')
     if device.index is not None:
         torch.cuda.set_device(device.index)
@@ -304,13 +303,10 @@ def generate_images(G, args):
             noise_tensors = [[] for _ in noise_reference]
         for seed in seeds:
 
-            rnd = np.random.RandomState(hash(seed))
-            #latents.append(torch.from_numpy(rnd.randn(latent_size)))
+            rnd = np.random.RandomState(hash(seed) % (1 << 32))
             formatter = "{:0" + str(latent_size) + "b}"
             latent = torch.tensor([(1 if x == '1' else -1) for x in formatter.format(seed)])
-            print(latent)
             latents.append(latent)
-            # TODO: convert 
             if len(args.gpu) <= 1:
                 for i, ref in enumerate(noise_reference):
                     noise_tensors[i].append(torch.from_numpy(rnd.randn(*ref.size()[1:])))
