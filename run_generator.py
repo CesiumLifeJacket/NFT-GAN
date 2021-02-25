@@ -117,11 +117,20 @@ def get_arg_parser():
 
     generate_images_parser.add_argument(
         '--seeds',
-        help='List of random seeds for generating images. ' + range_desc,
+        help='List of 512-bit row_seeds for generating images. ' + range_desc,
         type=utils.range_type,
         required=True,
         metavar='RANGE'
     )
+
+    generate_images_parser.add_argument(
+        '--nft_dna',
+        help='List of NFT DNA values. Each is a 512-bit integer' + range_desc,
+        type=utils.range_type,
+        required=False,
+        metavar='RANGE'
+    )
+
 
     _add_shared_arguments(generate_images_parser)
 
@@ -270,6 +279,7 @@ def style_mixing_example(G, args):
 
 def generate_images(G, args):
     latent_size, label_size = G.latent_size, G.label_size
+    print(f"Latent size: {latent_size}")
     device = torch.device(args.gpu[0] if args.gpu else 'cpu')
     if device.index is not None:
         torch.cuda.set_device(device.index)
@@ -293,8 +303,14 @@ def generate_images(G, args):
         if len(args.gpu) <= 1:
             noise_tensors = [[] for _ in noise_reference]
         for seed in seeds:
-            rnd = np.random.RandomState(seed)
-            latents.append(torch.from_numpy(rnd.randn(latent_size)))
+
+            rnd = np.random.RandomState(hash(seed))
+            #latents.append(torch.from_numpy(rnd.randn(latent_size)))
+            formatter = "{:0" + str(latent_size) + "b}"
+            latent = torch.tensor([(1 if x == '1' else -1) for x in formatter.format(seed)])
+            print(latent)
+            latents.append(latent)
+            # TODO: convert 
             if len(args.gpu) <= 1:
                 for i, ref in enumerate(noise_reference):
                     noise_tensors[i].append(torch.from_numpy(rnd.randn(*ref.size()[1:])))
